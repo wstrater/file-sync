@@ -1,0 +1,158 @@
+<html>
+<head>
+<style>
+body                             {}
+h1                               {}
+h2                               {}
+table                            {}
+td                               {}
+
+#titlePage                       {}
+#titleDetails                    {}
+#titlePlans                      {}
+
+.detailLabel                     {font-weight: bold; }
+.detailRow                       {vertical-align: top; }
+#detailTable                     {}
+.detailValue                     {}
+
+#planTable                       {}
+
+.headerColumn                    {font-weight: bold; text-decoration: underline; text-align: center; vertical-align: bottom; }
+.headerRow                       {}
+
+.pathRow                         {}
+.pathValue                       {font-weight: bold; }
+
+.syncBoth                        {}
+.syncLocal                       {}
+.syncRemote                      {}
+
+.itemName                        {}
+.itemLength                      {text-align: right; }
+.itemLastModified                {}
+
+.itemAction                      {}
+.itemEmpty                       {}
+.itemExists                      {}
+.itemLocal                       {}
+.itemNewer                       {}
+.itemRemote                      {}
+.itemRow                         {vertical-align: top; }
+.itemType                        {}
+
+.rowEven                         {}
+.rowFile                         {}
+.rowDirectory                    {}
+.rowOdd                          {}
+
+.rowCopyFileToLocal              {}
+.rowCopyFileToRemote             {}
+.rowDeleteDirFromLocal           {}
+.rowDeleteDirFromRemote          {}
+.rowDeleteFileFromLocal          {}
+.rowDeleteFileFromRemote         {}
+.rowSyncLocalDirToRemote         {}
+.rowSyncRemoteDirToLocal         {}
+.rowSkip                         {}
+
+.localExistsBoth                 {}
+.localExistsLocal                {}
+.localExistsRemote               {}
+
+.localNewerDifferent             {}
+.localNewerLocal                 {}
+.localNewerRemote                {}
+.localNewerSame                  {}
+
+.localCopyFileToLocal            {background-color: lightgoldenrodyellow; }
+.localCopyFileToRemote           {background-color: lightgreen; }
+.localDeleteDirFromLocal         {background-color: lightpink; }
+.localDeleteDirFromRemote        {}
+.localDeleteFileFromLocal        {background-color: lightpink; }
+.localDeleteFileFromRemote       {}
+.localSyncLocalDirToRemote       {background-color: lightblue; }
+.localSyncRemoteDirToLocal       {}
+.localSkip                       {background-color: lightgray; }
+
+.remoteExistsBoth                {}
+.remoteExistsLocal               {}
+.remoteExistsRemote              {}
+
+.remoteNewerDifferent            {}
+.remoteNewerLocal                {}
+.remoteNewerRemote               {}
+.remoteNewerSame                 {}
+
+.remoteCopyFileToLocal           {background-color: lightgreen; }
+.remoteCopyFileToRemote          {background-color: lightgoldenrodyellow; }
+.remoteDeleteDirFromLocal        {}
+.remoteDeleteDirFromRemote       {background-color: lightpink; }
+.remoteDeleteFileFromLocal       {}
+.remoteDeleteFileFromRemote      {background-color: lightpink; }
+.remoteSyncLocalDirToRemote      {background-color: lightblue; }
+.remoteSyncRemoteDirToLocal      {background-color: lightskyblue; }
+.remoteSkip                      {background-color: lightgray; }
+
+.localNewerDifferent.localSkip   {background-color: gold; }
+.localNewerLocal.localSkip       {background-color: gold; }
+.remoteNewerDifferent.remoteSkip {background-color: gold; }
+.remoteNewerRemote.remoteSkip    {background-color: gold; }
+
+</style>
+<link rel="stylesheet" type="text/css" href="planReport.css">
+</head>
+<body>
+<h1 id="titlePage">Plan Report</h1>
+
+<h2 id="titleDetails">Sync Details</h2>
+
+<table id="detailTable">
+<tr class="detailRow"><td class="detailLabel">Now</td><td class="detailValue">${now}</td></tr>
+<tr class="detailRow"><td class="detailLabel">Plan</td><td class="detailValue">${plan.name}</td></tr>
+<tr class="detailRow"><td class="detailLabel">Local Delete</td><td class="detailValue">${permissions.localDelete}</td></tr>
+<tr class="detailRow"><td class="detailLabel">Local Write</td><td class="detailValue">${permissions.localWrite}</td></tr>
+<tr class="detailRow"><td class="detailLabel">Remote Delete</td><td class="detailValue">${permissions.remoteDelete}</td></tr>
+<tr class="detailRow"><td class="detailLabel">Remote Write</td><td class="detailValue">${permissions.remoteWrite}</td></tr>
+</table>
+
+<h2 id="titlePlans">Plan Items</h2>
+
+<table id="planTable">
+<tr class="headerRow"><td class="headerColumn">Type</td><td class="headerColumn">Local File</td><td class="headerColumn">Size</td><td class="headerColumn">Last Modified</td><td class="headerColumn">Exists</td><td class="headerColumn">Newer</td><td class="headerColumn">Action</td><td class="headerColumn">Remote File</td><td class="headerColumn">Size</td><td class="headerColumn">Last Modified</td></tr>
+
+${foreach plans directoryPlan}
+<tr class="pathRow"><td class="pathValue" colspan="10">${directoryPlan.path}</td></tr>
+
+${foreach directoryPlan.planItems planItem}
+<tr class="itemRow row${planItem.type} ${if even_planItem}rowEven${else}rowOdd${end} row${planItem.action.name} sync${plan.name}">
+<td class="itemType">${planItem.type}</td>
+
+${if planItem.local}
+<td class="itemLocal itemName localExists${planItem.exists.name} localNewer${planItem.newer.name} local${planItem.action.name}">${planItem.local.name}</td>
+<td class="itemLocal itemLength localExists${planItem.exists.name} localNewer${planItem.newer.name} local${planItem.action.name}">${planItem.local.length}</td>
+<td class="itemLocal itemLastModified localExists${planItem.exists.name} localNewer${planItem.newer.name} local${planItem.action.name}">${planItem.local.lastModifiedDate;date(yyyy.MM.dd HH:mm:ss z)}</td>
+${else}
+<td class="itemEmpty"></td><td class="itemEmpty"></td><td class="itemEmpty"></td>
+${end}
+
+<td class="itemExists">${planItem.exists.name}</td>
+<td class="itemNewer">${planItem.newer.name}</td>
+<td class="itemAction">${planItem.action.name}</td>
+
+${if planItem.remote}
+<td class="itemRemote itemName remoteExists${planItem.exists.name} remoteNewer${planItem.newer.name} remote${planItem.action.name}">${planItem.remote.name}</td>
+<td class="itemRemote itemLength remoteExists${planItem.exists.name} remoteNewer${planItem.newer.name} remote${planItem.action.name}">${planItem.remote.length}</td>
+<td class="itemRemote itemLastModified remoteExists${planItem.exists.name} remoteNewer${planItem.newer.name} remote${planItem.action.name}">${planItem.remote.lastModifiedDate}</td>
+${else}
+<td class="itemEmpty"></td><td class="itemEmpty"></td><td class="itemEmpty"></td>
+${end}
+
+</tr>
+${end}
+${end}
+</table>
+
+<script src="planReport.js"></script>
+</body>
+</html>

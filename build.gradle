@@ -1,0 +1,99 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+allprojects {
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'eclipse'
+
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
+
+    eclipse {
+        classpath {
+             containers.remove('org.eclipse.jdt.launching.JRE_CONTAINER')
+             containers 'org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7'
+        }
+    }
+
+    repositories { 
+        mavenLocal()
+        mavenCentral()
+    }
+
+    dependencies {
+        // compile("com.wstrater:commons:${version}")
+
+        compile('org.slf4j:slf4j-api:1.7.12')
+        compile('org.slf4j:slf4j-log4j12:1.7.12')
+
+        compile('commons-codec:commons-codec:1.10')
+        compile('commons-cli:commons-cli:1.3.1')
+
+        testCompile('junit:junit:4.12') 
+    }
+}
+
+project(':file-sync-common') {
+    dependencies {
+        compile("commons-collections:commons-collections:3.2.1")
+        compile("com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}")
+    }
+}
+
+project(':file-sync-client') {
+    apply plugin: 'application'
+
+    mainClassName = "com.wstrater.server.fileSync.client.FileSyncClient"
+
+    dependencies {
+        compile project(':file-sync-common')
+
+        compile("com.sun.jersey:jersey-client:${jerseyVersion}")
+        compile("org.eclipse.jetty:jetty-http:${jettyVersion}")
+
+//        compile("com.sun.jersey:jersey-json:${jerseyVersion}")
+//        compile("org.glassfish.jersey.media:jersey-media-json-jackson:${jerseyMediaVersion}")
+        compile("com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:${jacksonVersion}")
+
+        compile('com.floreysoft:jmte:3.1.1')
+    }
+}
+
+project(':file-sync-server') {
+    apply plugin: 'application'
+
+    mainClassName = "com.wstrater.server.fileSync.server.FileSyncServer"
+
+    dependencies {
+        compile project(':file-sync-common')
+
+        compile("org.eclipse.jetty:jetty-server:${jettyVersion}")
+        compile("org.eclipse.jetty:jetty-servlet:${jettyVersion}")
+
+//        compile("com.sun.jersey:jersey-core:${jerseyVersion}")
+        compile("com.sun.jersey:jersey-server:${jerseyVersion}")
+        compile("com.sun.jersey:jersey-servlet:${jerseyVersion}")
+//        compile("com.sun.jersey:jersey-client:${jerseyVersion}")
+
+        compile("com.sun.jersey:jersey-json:${jerseyVersion}")
+//        compile("org.glassfish.jersey.media:jersey-media-json-jackson:${jacksonMediaVersion}")
+    }
+
+/*
+    jar {
+        manifest {
+            attributes 'Main-Class': 'com.wstrater.server.fileSync.server.FileSyncServer'
+        }
+    }
+ */
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.3'
+}

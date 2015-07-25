@@ -1,0 +1,31 @@
+"Detail","Value"[EOL]
+"Now","${now}"[EOL]
+"Plan","${plan.name}"[EOL]
+"Local Delete","${permissions.localDelete}"[EOL]
+"Local Write","${permissions.localWrite}"[EOL]
+"Remote Delete","${permissions.remoteDelete}"[EOL]
+"Remote Write","${permissions.remoteWrite}"[EOL]
+""[EOL]
+"Local File","Size","Last Modified","Exists","Newer","Action","Remote File","Size","Last Modified"[EOL]
+${foreach plans directoryPlan}
+"${directoryPlan.path}"
+[EOL]
+
+${foreach directoryPlan.planItems planItem}
+"${planItem.type}",
+
+${if planItem.local}"${planItem.local.name}","${planItem.local.length}","${planItem.local.lastModifiedDate}",
+${else}
+"","","",
+${end}
+
+"${planItem.exists.name}","${planItem.newer.name}","${planItem.action.name}",
+
+${if planItem.remote}"${planItem.remote.name}","${planItem.remote.length}","${planItem.remote.lastModifiedDate}"
+${else}
+"","",""
+${end}
+[EOL]
+
+${end}
+${end}

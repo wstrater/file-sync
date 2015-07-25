@@ -1,0 +1,2 @@
+rootProject.name='file-sync' 
+include 'file-sync-common', 'file-sync-client', 'file-sync-server'
