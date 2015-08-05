@@ -2,39 +2,44 @@ package com.wstrater.server.fileSync.common.utils;
 
 public abstract class Constants {
 
-  public final static String ADMIN_ROLE          = "admin";
-  public final static String BLOCK_SIZE_PARAM    = "blockSize";
-  public final static String CRC_HEADER          = "fileSync-crc";
-  public final static String DIRECTORY_PATH      = "/dir";
-  public final static String EOF_HEADER          = "fileSync-eof";
-  public final static String EOF_PARAM           = "eof";
-  public final static String EXCEPT_CLASS_HEADER = "fileSync-exceptionClass";
-  public final static String EXCEPT_MSG_HEADER   = "fileSync-exceptionMessage";
-  public final static String FILE_PATH           = "/file";
-  public final static String FILE_NAME_PARAM     = "fileName";
-  public final static String FILES_PARAM         = "files";
-  public final static String HASH_PATH           = "/hash";
-  public final static String HASH_TYPE_PARAM     = "hashType";
-  public final static String HIDDEN_DIRS_PARAM   = "hiddenDirs";
-  public final static String HIDDEN_FILES_PARAM  = "hiddenFiles";
-  public final static String ID_PARAM            = "id";
-  public final static String LENGTH_HEADER       = "fileSync-length";
-  public final static String LENGTH_PARAM        = "length";
-  public final static String OFFSET_PARAM        = "offset";
-  public final static String PATH_PARAM          = "path";
-  public final static String REALM               = "file-sync-server";
-  public final static String RECURSIVE_PARAM     = "recursive";
-  public final static String REHASH_PARAM        = "rehash";
-  public final static String SUCCESS_HEADER      = "fileSync-success";
-  public final static String TIME_STAMP_PARAM    = "timeStamp";
-  public final static String USER_ROLE           = "user";
+  public final static String ADMIN_ROLE              = "admin";
+  public final static String BLOCK_SIZE_PARAM        = "blockSize";
+  public final static String COMPRESSED_HEADER       = "fileSync-compressed";
+  public final static String COMPRESSED_PARAM        = "compressed";
+  public final static String CONTENT_ENCODED_HEADER  = "Accept-Encoding";
+  public final static String CRC_HEADER              = "fileSync-crc";
+  public final static String DEFLATE                 = "deflate";
+  public final static String DIRECTORY_PATH          = "/dir";
+  public final static String EOF_HEADER              = "fileSync-eof";
+  public final static String EOF_PARAM               = "eof";
+  public final static String EXCEPT_CLASS_HEADER     = "fileSync-exceptionClass";
+  public final static String EXCEPT_MSG_HEADER       = "fileSync-exceptionMessage";
+  public final static String FILE_PATH               = "/file";
+  public final static String FILE_NAME_PARAM         = "fileName";
+  public final static String FILES_PARAM             = "files";
+  public final static String HASH_PATH               = "/hash";
+  public final static String HASH_TYPE_PARAM         = "hashType";
+  public final static String HIDDEN_DIRS_PARAM       = "hiddenDirs";
+  public final static String HIDDEN_FILES_PARAM      = "hiddenFiles";
+  public final static String ID_PARAM                = "id";
+  public final static String LENGTH_HEADER           = "fileSync-length";
+  public final static String LENGTH_PARAM            = "length";
+  public final static int    MINIMUM_FOR_COMPRESSION = 3072;
+  public final static String OFFSET_PARAM            = "offset";
+  public final static String PATH_PARAM              = "path";
+  public final static String REALM                   = "file-sync-server";
+  public final static String RECURSIVE_PARAM         = "recursive";
+  public final static String REHASH_PARAM            = "rehash";
+  public final static String SUCCESS_HEADER          = "fileSync-success";
+  public final static String TIME_STAMP_PARAM        = "timeStamp";
+  public final static String USER_ROLE               = "user";
 
-  public final static String ID_REST             = "{" + ID_PARAM + " : .*}";
+  public final static String ID_REST                 = "{" + ID_PARAM + " : .*}";
   // public final static String ID_REST = "{" + ID_PARAM + " : [\\w\\-]*}";
-  public final static String PATH_REST           = "{" + PATH_PARAM + " : .*}";
+  public final static String PATH_REST               = "{" + PATH_PARAM + " : .*}";
   // public final static String PATH_REST = "{" + PATH_PARAM +
   // " : ([\\w\\.][\\w\\. \\-]*[/\\\\])*[\\w\\.][\\w\\. \\-]*}";
-  public final static String FILE_NAME_REST      = "{" + FILE_NAME_PARAM + " : .*}";
+  public final static String FILE_NAME_REST          = "{" + FILE_NAME_PARAM + " : .*}";
 
   // public final static String FILE_NAME_REST = "{" + FILE_NAME_PARAM +
   // " : ([\\w\\.][\\w\\. \\-]*[/\\\\])*[\\w\\.][\\w\\. \\-]*}";

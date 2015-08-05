@@ -46,6 +46,39 @@ import com.wstrater.server.fileSync.common.utils.FileUtils;
  */
 public abstract class AbstractPlanMapTest {
 
+  protected enum TestCompression {
+    NoCompression(false, false), CompressAlpha(true, true), CompressBinary(true, false);
+
+    private boolean alpha;
+    private boolean compress;
+
+    private TestCompression(boolean compress, boolean alpha) {
+      this.compress = compress;
+      this.alpha = alpha;
+    }
+
+    public boolean alpha() {
+      return alpha;
+    }
+
+    public boolean compress() {
+      return compress;
+    }
+
+    public TestCompression next() {
+      TestCompression ret = this;
+
+      int next = ordinal() + 1;
+      if (next >= TestCompression.values().length) {
+        next = 0;
+      }
+      ret = TestCompression.values()[next];
+
+      return ret;
+    }
+
+  }
+
   protected enum TestSetup {
     LocalOnly(true, false), RemoteOnly(false, true), Same(false, false, 0L), NewerLocal(true, false, 5L), NewerRemote(true, false,
         -5L), Different(true, true, 0L);
@@ -111,6 +144,7 @@ public abstract class AbstractPlanMapTest {
 
   protected static final boolean[] TrueFalse      = new boolean[] { true, false };
 
+  private final static byte[]      CHARS          = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".getBytes();
   private static final String      NO_HASH        = "[NoHash]";
   protected static final String    TIME_FORMAT    = "hh:mm:ss.SSS";
 
@@ -236,14 +270,14 @@ public abstract class AbstractPlanMapTest {
     }
   }
 
-  protected void setupTestCase(TestCase testCase) throws IOException {
-    logger.debug(String.format("Setup Test Case: %s", testCase));
+  protected void setupTestCase(TestCase testCase, TestCompression compression) throws IOException {
+    logger.debug(String.format("Setup Test Case: %s Compression [%s]", testCase, compression));
 
     expectedFiles.clear();
     expectedHashes.clear();
 
     for (Entry<TestSetup, TestResult> entry : testCase.getTestResults().entrySet()) {
-      setupTestSetup(entry.getKey(), entry.getValue());
+      setupTestSetup(entry.getKey(), entry.getValue(), compression.alpha);
     }
   }
 
@@ -271,8 +305,8 @@ public abstract class AbstractPlanMapTest {
     return ret;
   }
 
-  private void setupTestFile(TestSetup testSetup, TestResult testResult, File localBaseDir, File remoteBaseDir, String path)
-      throws IOException {
+  private void setupTestFile(TestSetup testSetup, TestResult testResult, File localBaseDir, File remoteBaseDir, String path,
+      boolean alphaData) throws IOException {
     String fileName = String.format("%s/sycnerTest_%s_%d.tmp", path, testSetup.name(), 100000 + rand.nextInt(899999));
 
     long localTimeStamp = System.currentTimeMillis();
@@ -281,7 +315,7 @@ public abstract class AbstractPlanMapTest {
 
     File localFile = null;
     byte[] localContent = new byte[FileUtils.MIN_BLOCK_SIZE + rand.nextInt(3 * FileUtils.MIN_BLOCK_SIZE)];
-    rand.nextBytes(localContent);
+    setupTestRandomContent(localContent, alphaData);
     long localCRC = 0L;
 
     if (testSetup.localFile()) {
@@ -296,7 +330,7 @@ public abstract class AbstractPlanMapTest {
       if (testSetup.differentSize()) {
         remoteContent = new byte[FileUtils.MIN_BLOCK_SIZE + rand.nextInt(3 * FileUtils.MIN_BLOCK_SIZE)];
       }
-      rand.nextBytes(remoteContent);
+      setupTestRandomContent(remoteContent, alphaData);
       remoteCRC = calcCRC(remoteContent);
     }
 
@@ -352,22 +386,32 @@ public abstract class AbstractPlanMapTest {
     }
   }
 
-  private void setupTestSetup(TestSetup testSetup, TestResult testResult) throws IOException {
-    logger.debug(String.format("Setup Test Setup: testSetup: %s, testResult: %s", testSetup, testResult));
+  private void setupTestRandomContent(byte[] content, boolean alphaData) {
+    if (alphaData) {
+      for (int xx = 0; xx < content.length; xx++) {
+        content[xx] = CHARS[rand.nextInt(CHARS.length)];
+      }
+    } else {
+      rand.nextBytes(content);
+    }
+  }
+
+  private void setupTestSetup(TestSetup testSetup, TestResult testResult, boolean alphaData) throws IOException {
+    logger.debug(String.format("Setup Test Setup: testSetup: %s, testResult: %s, alphaData: %b", testSetup, testResult, alphaData));
 
     String path = "";
-    setupTestFile(testSetup, testResult, localBaseDir, remoteBaseDir, path);
+    setupTestFile(testSetup, testResult, localBaseDir, remoteBaseDir, path, alphaData);
     if (!simpleTest) {
-      setupTestFile(testSetup, testResult, localBaseDir, remoteBaseDir, path);
+      setupTestFile(testSetup, testResult, localBaseDir, remoteBaseDir, path, alphaData);
       path = String.format("%06d", rand.nextInt(999999));
-      setupTestFile(testSetup, testResult, localBaseDir, remoteBaseDir, path);
-      setupTestFile(testSetup, testResult, localBaseDir, remoteBaseDir, path);
+      setupTestFile(testSetup, testResult, localBaseDir, remoteBaseDir, path, alphaData);
+      setupTestFile(testSetup, testResult, localBaseDir, remoteBaseDir, path, alphaData);
       path = String.format("%s/%06d", path, rand.nextInt(999999));
-      setupTestFile(testSetup, testResult, localBaseDir, remoteBaseDir, path);
-      setupTestFile(testSetup, testResult, localBaseDir, remoteBaseDir, path);
+      setupTestFile(testSetup, testResult, localBaseDir, remoteBaseDir, path, alphaData);
+      setupTestFile(testSetup, testResult, localBaseDir, remoteBaseDir, path, alphaData);
       path = String.format("%06d", rand.nextInt(999999));
-      setupTestFile(testSetup, testResult, localBaseDir, remoteBaseDir, path);
-      setupTestFile(testSetup, testResult, localBaseDir, remoteBaseDir, path);
+      setupTestFile(testSetup, testResult, localBaseDir, remoteBaseDir, path, alphaData);
+      setupTestFile(testSetup, testResult, localBaseDir, remoteBaseDir, path, alphaData);
     }
   }
 

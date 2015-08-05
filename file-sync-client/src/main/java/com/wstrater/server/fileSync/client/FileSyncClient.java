@@ -37,6 +37,7 @@ public class FileSyncClient {
       } else {
         ChunkUtils.setBlockSize(cli.getBlockSize());
         DirectoryUtils.setBaseDir(cli.getBaseDir());
+        FileUtils.setCompress(cli.isCompress());
         FileUtils.getPermissions().setLocalDelete(cli.isAllowDelete());
         FileUtils.getPermissions().setLocalWrite(cli.isAllowWrite());
         FileUtils.getPermissions().setRemoteDelete(cli.isRemoteDelete());

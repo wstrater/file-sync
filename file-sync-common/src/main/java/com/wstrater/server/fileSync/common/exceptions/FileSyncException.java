@@ -18,4 +18,8 @@ public class FileSyncException extends RuntimeException {
     super(message, thrown);
   }
 
+  public FileSyncException(Throwable thrown) {
+    super(thrown);
+  }
+
 }

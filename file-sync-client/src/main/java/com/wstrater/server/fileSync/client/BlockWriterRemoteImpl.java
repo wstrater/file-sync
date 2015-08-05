@@ -12,11 +12,15 @@ import com.wstrater.server.fileSync.common.data.DeleteRequest;
 import com.wstrater.server.fileSync.common.data.DeleteResponse;
 import com.wstrater.server.fileSync.common.data.WriteRequest;
 import com.wstrater.server.fileSync.common.data.WriteResponse;
+import com.wstrater.server.fileSync.common.exceptions.ErrorDeflatingBlockException;
 import com.wstrater.server.fileSync.common.exceptions.ErrorWritingBlockException;
 import com.wstrater.server.fileSync.common.file.BlockReader;
 import com.wstrater.server.fileSync.common.file.BlockWriter;
+import com.wstrater.server.fileSync.common.utils.CompressionUtils;
 import com.wstrater.server.fileSync.common.utils.Constants;
+import com.wstrater.server.fileSync.common.utils.FileUtils;
 import com.wstrater.server.fileSync.common.utils.TimeUtils;
+import com.wstrater.server.fileSync.common.utils.CompressionUtils.Deflated;
 
 /**
  * This a remote implementation of {@link BlockReader}. It connects to the {@link FileController}
@@ -87,14 +91,32 @@ public class BlockWriterRemoteImpl implements BlockWriter, RequiresRemoteClient 
 
     String uri = remoteClient.getURI(String.format("%s/%s", Constants.FILE_PATH, request.getFileName()));
 
+    byte[] block = request.getData();
+
+    Deflated deflated = null;
+    if (FileUtils.isCompress() && request.getLength() >= Constants.MINIMUM_FOR_COMPRESSION) {
+      deflated = CompressionUtils.deflate(block);
+      if (deflated == null) {
+        throw new ErrorDeflatingBlockException("Error deflating write request");
+      }
+      if (deflated.getLength() >= request.getLength()) {
+        deflated = null;
+      } else {
+        block = deflated.getData();
+      }
+    }
+
     WebResource webResource = remoteClient.getClient().resource(uri)
         .queryParam(Constants.OFFSET_PARAM, String.valueOf(request.getOffset()))
         .queryParam(Constants.LENGTH_PARAM, String.valueOf(request.getLength()))
         .queryParam(Constants.TIME_STAMP_PARAM, String.valueOf(TimeUtils.toUTC(request.getTimeStamp())))
         .queryParam(Constants.EOF_PARAM, String.valueOf(request.isEof()));
+    if (deflated != null) {
+      webResource = webResource.queryParam(Constants.COMPRESSED_PARAM, String.valueOf(deflated.getLength()));
+    }
     logger.debug(webResource.toString());
     ClientResponse clientResponse = webResource.accept(MediaType.APPLICATION_OCTET_STREAM).put(ClientResponse.class,
-        request.getData());
+        block);
     try {
       remoteClient.checkForException(clientResponse);
 

@@ -42,6 +42,7 @@ public abstract class FileUtils {
 
   protected final static Logger  logger         = LoggerFactory.getLogger(FileUtils.class);
 
+  private static boolean         compress       = false;
   private static int             maxBlockSize   = MAX_BLOCK_SIZE;
   private static long            maxOffset      = MAX_OFFSET;
   private static FilePermissions permissions    = new FilePermissions();
@@ -161,6 +162,10 @@ public abstract class FileUtils {
     return ret;
   }
 
+  public static boolean isCompress() {
+    return compress;
+  }
+
   public static int getMaxBlockSize() {
     return maxBlockSize < 0 ? Integer.MAX_VALUE : maxBlockSize;
   }
@@ -232,6 +237,10 @@ public abstract class FileUtils {
         ret.getCrc32(), ret.isEof(), ret.isSuccess()));
 
     return ret;
+  }
+
+  public static void setCompress(boolean compress) {
+    FileUtils.compress = compress;
   }
 
   public static void setMaxBlockSize(int maxBlockSize) {

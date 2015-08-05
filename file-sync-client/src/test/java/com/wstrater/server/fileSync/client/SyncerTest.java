@@ -101,10 +101,12 @@ public class SyncerTest extends AbstractPlanMapTest {
     loadTestCases(TEST_CASE_FILE);
 
     try {
+      TestCompression compression = TestCompression.NoCompression;
       for (TestCase testCase : testCases) {
         cleanUpTest();
 
-        setupTestCase(testCase);
+        FileUtils.setCompress(compression.compress());
+        setupTestCase(testCase, compression);
 
         dumpDirectories();
 
@@ -119,6 +121,8 @@ public class SyncerTest extends AbstractPlanMapTest {
         verifyTestCase(testCase);
 
         verifyDirectoryListings(testCase);
+        
+        compression = compression.next();
       }
     } finally {
       cleanUpTest();

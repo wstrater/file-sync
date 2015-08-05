@@ -38,6 +38,7 @@ public class CommandLineUtils {
   public final static String ALLOW_WRITE_ARG   = "allow-write";
   public final static String BASE_DIR_ARG      = "base-dir";
   public final static String BLOCK_SIZE_ARG    = "block-size";
+  public final static String COMPRESS_ARG      = "compress";
   public final static String ENC_PASS_ARG      = "enc-pass";
   public final static String ENC_USER_ARG      = "enc-user";
   public final static String HASH_ARG          = "hash";
@@ -85,6 +86,7 @@ public class CommandLineUtils {
   private boolean            allowWrite        = FilePermissions.DEFAULT_LOCAL_WRITE;
   private File               baseDir;
   private int                blockSize         = ChunkUtils.DEFAULT_BLOCK_SIZE;
+  private boolean            compress          = false;
   private String             encPass;
   private String             encUser;
   private SyncEnum           hash              = SyncEnum.Local;
@@ -285,6 +287,14 @@ public class CommandLineUtils {
     int ret = getPropertyInt(BLOCK_SIZE_ARG, blockSize);
 
     logParameter("Block Size", ret);
+
+    return ret;
+  }
+
+  public boolean isCompress() {
+    boolean ret = getPropertyBoolean(COMPRESS_ARG, compress);
+
+    logParameter("Compress", ret);
 
     return ret;
   }
@@ -559,6 +569,10 @@ public class CommandLineUtils {
     return cli != null && cli.hasOption(BLOCK_SIZE_ARG);
   }
 
+  public boolean hasCompress() {
+    return cli != null && cli.hasOption(COMPRESS_ARG);
+  }
+
   public boolean hasEncPass() {
     return cli != null && cli.hasOption(ENC_PASS_ARG);
   }
@@ -751,6 +765,8 @@ public class CommandLineUtils {
             throw new ParseException(String.format("Invalid %s: %s", BLOCK_SIZE_ARG, cli.getOptionValue(PORT_ARG)));
           }
         }
+
+        compress = parseBoolean(COMPRESS_ARG, compress);
 
         if (hasEncPass()) {
           encPass = cli.getOptionValue(ENC_PASS_ARG);
@@ -1085,14 +1101,16 @@ public class CommandLineUtils {
   }
 
   public CommandLineUtils useSync() {
-    options.addOption(Option.builder().longOpt(SYNC_ARG).required(false).hasArg().argName("direction").optionalArg(false)
-        .type(String.class).desc(String.format("Perform a synchronization. %s", Arrays.toString(SyncEnum.values()))).build());
+    options.addOption(Option.builder().longOpt(COMPRESS_ARG).required(false).hasArg().argName("compress").optionalArg(true)
+        .type(Boolean.class).desc("Compress remote blocks.").build());
     options.addOption(Option.builder().longOpt(HIDDEN_DIRS_ARG).required(false).hasArg().argName("include").optionalArg(true)
         .type(Boolean.class).desc("Include hidden directories.").build());
     options.addOption(Option.builder().longOpt(HIDDEN_FILES_ARG).required(false).hasArg().argName("include").optionalArg(true)
         .type(Boolean.class).desc("Include hidden files.").build());
     options.addOption(Option.builder().longOpt(RECURSIVE_ARG).required(false).hasArg().argName("recurse").optionalArg(true)
         .type(Boolean.class).desc("Process directories recursively.").build());
+    options.addOption(Option.builder().longOpt(SYNC_ARG).required(false).hasArg().argName("direction").optionalArg(false)
+        .type(String.class).desc(String.format("Perform a synchronization. %s", Arrays.toString(SyncEnum.values()))).build());
     return this;
   }
 

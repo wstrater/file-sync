@@ -46,7 +46,7 @@ public class HasherTest extends AbstractPlanMapTest {
       for (TestCase testCase : testCases) {
         cleanUpTest();
 
-        setupTestCase(testCase);
+        setupTestCase(testCase, TestCompression.NoCompression);
 
         dumpDirectories();
 

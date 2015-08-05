@@ -5,6 +5,7 @@ import java.io.File;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.wstrater.server.fileSync.client.AbstractPlanMapTest.TestCompression;
 import com.wstrater.server.fileSync.common.utils.Constants;
 import com.wstrater.server.fileSync.common.utils.FilePermissions;
 import com.wstrater.server.fileSync.common.utils.FileUtils;
@@ -39,7 +40,7 @@ public class PlannerTest extends AbstractPlanMapTest {
       for (TestCase testCase : testCases) {
         cleanUpTest();
 
-        setupTestCase(testCase);
+        setupTestCase(testCase, TestCompression.NoCompression);
 
         dumpDirectories();
 

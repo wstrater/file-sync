@@ -13,12 +13,17 @@ import org.slf4j.LoggerFactory;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.WebResource.Builder;
 import com.wstrater.server.fileSync.common.data.ReadRequest;
 import com.wstrater.server.fileSync.common.data.ReadResponse;
+import com.wstrater.server.fileSync.common.exceptions.ErrorInflatingBlockException;
 import com.wstrater.server.fileSync.common.exceptions.ErrorReadingBlockException;
 import com.wstrater.server.fileSync.common.exceptions.ErrorReadingResponse;
 import com.wstrater.server.fileSync.common.file.BlockReader;
+import com.wstrater.server.fileSync.common.utils.CompressionUtils;
+import com.wstrater.server.fileSync.common.utils.CompressionUtils.Inflated;
 import com.wstrater.server.fileSync.common.utils.Constants;
+import com.wstrater.server.fileSync.common.utils.FileUtils;
 
 /**
  * This a remote implementation of {@link BlockReader}. It connects to the {@link FileController}
@@ -77,7 +82,12 @@ public class BlockReaderRemoteImpl implements BlockReader, RequiresRemoteClient 
         .queryParam(Constants.OFFSET_PARAM, String.valueOf(request.getOffset()))
         .queryParam(Constants.BLOCK_SIZE_PARAM, String.valueOf(request.getBlockSize()));
     logger.debug(webResource.toString());
-    ClientResponse clientResponse = webResource.accept(MediaType.APPLICATION_OCTET_STREAM).get(ClientResponse.class);
+    Builder builder = webResource.accept(MediaType.APPLICATION_OCTET_STREAM);
+    if (FileUtils.isCompress()) {
+      builder = builder.header(Constants.CONTENT_ENCODED_HEADER, Constants.DEFLATE);
+    }
+
+    ClientResponse clientResponse = builder.get(ClientResponse.class);
     try {
       remoteClient.checkForException(clientResponse);
 
@@ -86,18 +96,39 @@ public class BlockReaderRemoteImpl implements BlockReader, RequiresRemoteClient 
             clientResponse.getStatusInfo()));
       }
 
-      ret.setLength(Integer.parseInt(clientResponse.getHeaders().getFirst(Constants.LENGTH_HEADER)));
+      logger.debug(clientResponse.getHeaders().toString());
 
+      ret.setLength(Integer.parseInt(clientResponse.getHeaders().getFirst(Constants.LENGTH_HEADER)));
       int contentLength = Integer.parseInt(clientResponse.getHeaders().getFirst("Content-Length"));
-      if (contentLength != ret.getLength()) {
-        throw new ErrorReadingBlockException(String.format("Failed GET %s: Content-Length: %d/%s", uri, contentLength,
-            ret.getLength()));
+
+      byte[] block = null;
+      int compressed = -1;
+      if (clientResponse.getHeaders().containsKey(Constants.COMPRESSED_HEADER)) {
+        compressed = Integer.parseInt(clientResponse.getHeaders().getFirst(Constants.COMPRESSED_HEADER));
+        if (contentLength != compressed) {
+          throw new ErrorReadingBlockException(String.format("Failed GET %s: Compressed Content-Length: %d/%s", uri, contentLength,
+              compressed));
+        }
+
+        Inflated inflated = CompressionUtils.inflate(getDataByEntity(clientResponse, compressed), ret.getLength());
+        if (inflated == null || inflated.getLength() != ret.getLength()) {
+          throw new ErrorInflatingBlockException("Error inflating compressed read response");
+        }
+
+        block = inflated.getData();
+      } else {
+        if (contentLength != ret.getLength()) {
+          throw new ErrorReadingBlockException(String.format("Failed GET %s: Content-Length: %d/%s", uri, contentLength,
+              ret.getLength()));
+        }
+
+        block = getDataByEntity(clientResponse, ret.getLength());
       }
 
       ret.setCrc32(Long.parseLong(clientResponse.getHeaders().getFirst(Constants.CRC_HEADER)));
       ret.setEof(Boolean.parseBoolean(clientResponse.getHeaders().getFirst(Constants.EOF_HEADER)));
       ret.setSuccess(Boolean.parseBoolean(clientResponse.getHeaders().getFirst(Constants.SUCCESS_HEADER)));
-      ret.setData(getDataByEntity(clientResponse, ret.getLength()));
+      ret.setData(block);
     } finally {
       clientResponse.close();
     }
