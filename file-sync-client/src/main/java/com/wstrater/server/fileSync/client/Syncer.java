@@ -16,6 +16,8 @@ import com.wstrater.server.fileSync.common.data.DirectoryListRequest;
 import com.wstrater.server.fileSync.common.data.DirectoryListResponse;
 import com.wstrater.server.fileSync.common.data.DirectoryMakeRequest;
 import com.wstrater.server.fileSync.common.data.DirectoryMakeResponse;
+import com.wstrater.server.fileSync.common.data.DirectoryPermissionsRequest;
+import com.wstrater.server.fileSync.common.data.DirectoryPermissionsResponse;
 import com.wstrater.server.fileSync.common.data.IndexFile;
 import com.wstrater.server.fileSync.common.data.IndexInfo;
 import com.wstrater.server.fileSync.common.data.ReadRequest;
@@ -34,6 +36,7 @@ import com.wstrater.server.fileSync.common.file.BlockWriterLocalImpl;
 import com.wstrater.server.fileSync.common.file.DirectoryLister;
 import com.wstrater.server.fileSync.common.file.DirectoryListerLocalAsRemoteImpl;
 import com.wstrater.server.fileSync.common.file.DirectoryListerLocalImpl;
+import com.wstrater.server.fileSync.common.utils.AccessUtils;
 import com.wstrater.server.fileSync.common.utils.Compare;
 import com.wstrater.server.fileSync.common.utils.Constants.ActionEnum;
 import com.wstrater.server.fileSync.common.utils.Constants.SyncEnum;
@@ -148,6 +151,8 @@ public class Syncer {
     } catch (NotValidDirectoryException ee) {
       // It does not exist so create an empty structure.
       ret = new DirectoryInfo();
+      DirectoryPermissionsResponse response = lister.getPermissions(new DirectoryPermissionsRequest());
+      ret.setAccess(AccessUtils.NewDirectory().permissions(response.isAllowDelete(), response.isAllowWrite()).get());
     }
 
     return ret;
@@ -171,7 +176,12 @@ public class Syncer {
       remoteLister = new DirectoryListerLocalAsRemoteImpl();
       remoteWriter = new BlockWriterLocalAsRemoteImpl();
     } else {
-      remoteLister = new DirectoryListerRemoteImpl(remoteClient);
+      if (remoteClient instanceof RemoteUnitTestClient) {
+        // This is used for integration testing to override permissions.
+        remoteLister = new DirectoryListerRemoteUnitTestImpl((RemoteUnitTestClient) remoteClient);
+      } else {
+        remoteLister = new DirectoryListerRemoteImpl(remoteClient);
+      }
       remoteReader = new BlockReaderRemoteImpl(remoteClient);
       remoteWriter = new BlockWriterRemoteImpl(remoteClient);
     }

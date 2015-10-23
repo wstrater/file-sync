@@ -11,6 +11,8 @@ import java.util.Date;
  */
 public interface InfoItem {
 
+  public byte getAccess();
+
   public Long getLength();
 
   public Long getLastModified();

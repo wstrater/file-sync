@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.wstrater.server.fileSync.common.data.IndexInfo;
+import com.wstrater.server.fileSync.common.utils.AccessPermissions;
 import com.wstrater.server.fileSync.common.utils.Compare;
 import com.wstrater.server.fileSync.common.utils.Constants.ActionEnum;
 import com.wstrater.server.fileSync.common.utils.Constants.ExistsEnum;
@@ -102,7 +103,7 @@ public abstract class PlanDecider {
    * @return
    */
   public static ActionEnum decide(ActionEnum currentAction, SyncEnum sync, ExistsEnum exists, NewerEnum newer,
-      FilePermissions permissions) {
+      AccessPermissions permissions) {
     ActionEnum ret = currentAction;
 
     // Actual value does not matter as long as it is set to some unique value whenever ret is set.

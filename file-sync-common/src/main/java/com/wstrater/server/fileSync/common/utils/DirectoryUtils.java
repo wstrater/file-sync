@@ -1,5 +1,7 @@
 package com.wstrater.server.fileSync.common.utils;
 
+import static com.wstrater.server.fileSync.common.utils.AccessUtils.access;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
@@ -14,6 +16,8 @@ import com.wstrater.server.fileSync.common.data.DirectoryListRequest;
 import com.wstrater.server.fileSync.common.data.DirectoryListResponse;
 import com.wstrater.server.fileSync.common.data.DirectoryMakeRequest;
 import com.wstrater.server.fileSync.common.data.DirectoryMakeResponse;
+import com.wstrater.server.fileSync.common.data.DirectoryPermissionsRequest;
+import com.wstrater.server.fileSync.common.data.DirectoryPermissionsResponse;
 import com.wstrater.server.fileSync.common.data.FileInfo;
 import com.wstrater.server.fileSync.common.data.IndexFile;
 import com.wstrater.server.fileSync.common.data.IndexInfo;
@@ -89,24 +93,6 @@ public abstract class DirectoryUtils {
     return ret;
   }
 
-  public static DirectoryMakeResponse makeDirectory(DirectoryMakeRequest request) {
-    DirectoryMakeResponse ret = new DirectoryMakeResponse();
-
-    ret.setRequest(request);
-
-    File dir = validateDirectoryMakeRequest(request);
-
-    logger.info(String.format("MakeDiretory: %s", dir.getAbsolutePath()));
-
-    dir.mkdirs();
-
-    ret.setSuccess(dir.isDirectory());
-
-    logger.info(String.format("MakeDiretory: %s, Success: %b", dir.getAbsolutePath(), ret.isSuccess()));
-
-    return ret;
-  }
-
   public static File getBaseDir() {
     return baseDir;
   }
@@ -137,6 +123,25 @@ public abstract class DirectoryUtils {
     } catch (IOException ee) {
       ret = false;
     }
+
+    return ret;
+  }
+
+  public static DirectoryPermissionsResponse getPermissions(DirectoryPermissionsRequest request) {
+    DirectoryPermissionsResponse ret = new DirectoryPermissionsResponse();
+
+    ret.setRequest(request);
+
+    validateDirectoryPermissionsRequest(request);
+
+    logger.info(String.format("GetPermissions"));
+
+    ret.setAllowDelete(FileUtils.getPermissions().isLocalDelete());
+    ret.setAllowWrite(FileUtils.getPermissions().isLocalWrite());
+    ret.setSuccess(true);
+
+    logger.info(String.format("GetPermissions: Success: %b, Delete: %b/%b, Write: %b/%b", ret.isSuccess(), FileUtils
+        .getPermissions().isLocalDelete(), ret.isAllowDelete(), FileUtils.getPermissions().isLocalWrite(), ret.isAllowWrite()));
 
     return ret;
   }
@@ -198,6 +203,7 @@ public abstract class DirectoryUtils {
       dir = FileUtils.canonicalFile(dir);
       ret = new DirectoryInfo();
       ret.setName(".");
+      ret.setAccess(access().dir(dir).permissions(FileUtils.getPermissions()).get());
       listDirectoryContents(ret, dir, recursive, hiddenDirectories, hiddenFiles);
     }
 
@@ -224,6 +230,7 @@ public abstract class DirectoryUtils {
             if (hiddenDirectories || !file.isHidden()) {
               DirectoryInfo directoryInfo = new DirectoryInfo();
               directoryInfo.setName(file.getName());
+              directoryInfo.setAccess(access().dir(file).permissions(FileUtils.getPermissions()).get());
               parent.addDirectory(directoryInfo);
               if (recursive) {
                 listDirectoryContents(directoryInfo, file, recursive, hiddenDirectories, hiddenFiles);
@@ -233,6 +240,7 @@ public abstract class DirectoryUtils {
             if ((hiddenFiles || !file.isHidden()) && !Compare.equals(IndexFile.INDEX_FILE_NAME, file.getName())) {
               FileInfo fileInfo = new FileInfo();
               fileInfo.setName(file.getName());
+              fileInfo.setAccess(access(parent.getAccess()).file(file).get());
               fileInfo.setLastModified(file.lastModified());
               fileInfo.setLength(file.length());
               IndexInfo indexInfo = indexFile.getIndexInfo(file.getName());
@@ -247,6 +255,24 @@ public abstract class DirectoryUtils {
         }
       }
     }
+  }
+
+  public static DirectoryMakeResponse makeDirectory(DirectoryMakeRequest request) {
+    DirectoryMakeResponse ret = new DirectoryMakeResponse();
+
+    ret.setRequest(request);
+
+    File dir = validateDirectoryMakeRequest(request);
+
+    logger.info(String.format("MakeDiretory: %s", dir.getAbsolutePath()));
+
+    dir.mkdirs();
+
+    ret.setSuccess(dir.isDirectory());
+
+    logger.info(String.format("MakeDiretory: %s, Success: %b", dir.getAbsolutePath(), ret.isSuccess()));
+
+    return ret;
   }
 
   public static void setBaseDir(File baseDir) {
@@ -321,6 +347,12 @@ public abstract class DirectoryUtils {
     validateFileLocation(request.getBaseDir(), ret);
 
     return ret;
+  }
+
+  private static void validateDirectoryPermissionsRequest(DirectoryPermissionsRequest request) {
+    if (request == null) {
+      throw new MissingRequestException("Missing request");
+    }
   }
 
   private static File validateDirectoryListRequest(DirectoryListRequest request) {

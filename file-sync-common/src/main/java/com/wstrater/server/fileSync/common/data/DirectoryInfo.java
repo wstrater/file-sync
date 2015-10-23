@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.wstrater.server.fileSync.common.utils.AccessUtils.Access;
 
 /**
  * Details of a directory.
@@ -15,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class DirectoryInfo implements InfoItem {
 
+  private byte                access;
   private List<DirectoryInfo> directories;
   private List<FileInfo>      files;
   private String              name;
@@ -45,6 +47,10 @@ public class DirectoryInfo implements InfoItem {
     for (DirectoryInfo directoryInfo : getDirectories()) {
       directoryInfo.adjustLastModified(offset);
     }
+  }
+
+  public byte getAccess() {
+    return access;
   }
 
   public List<DirectoryInfo> getDirectories() {
@@ -85,6 +91,10 @@ public class DirectoryInfo implements InfoItem {
     return name;
   }
 
+  public void setAccess(byte access) {
+    this.access = access;
+  }
+
   public void setDirectories(List<DirectoryInfo> directories) {
     this.directories = directories;
   }
@@ -108,6 +118,7 @@ public class DirectoryInfo implements InfoItem {
     builder.append(indent).append("DirectoryInfo [");
     if (name != null)
       builder.append("name=").append(name);
+    builder.append(", ").append("access=").append(Access.toString(access));
     if (directories != null) {
       builder.append(", ").append("directories=[");
       for (DirectoryInfo directoryInfo : directories) {

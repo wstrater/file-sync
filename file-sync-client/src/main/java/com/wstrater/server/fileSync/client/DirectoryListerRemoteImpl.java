@@ -15,7 +15,10 @@ import com.wstrater.server.fileSync.common.data.DirectoryListRequest;
 import com.wstrater.server.fileSync.common.data.DirectoryListResponse;
 import com.wstrater.server.fileSync.common.data.DirectoryMakeRequest;
 import com.wstrater.server.fileSync.common.data.DirectoryMakeResponse;
+import com.wstrater.server.fileSync.common.data.DirectoryPermissionsRequest;
+import com.wstrater.server.fileSync.common.data.DirectoryPermissionsResponse;
 import com.wstrater.server.fileSync.common.exceptions.ErrorDeletingDirectoryException;
+import com.wstrater.server.fileSync.common.exceptions.ErrorGettingPermissionsException;
 import com.wstrater.server.fileSync.common.exceptions.ErrorListingDirectoryException;
 import com.wstrater.server.fileSync.common.exceptions.ErrorMakingDirectoryException;
 import com.wstrater.server.fileSync.common.file.DirectoryLister;
@@ -64,6 +67,46 @@ public class DirectoryListerRemoteImpl implements DirectoryLister, RequiresRemot
       if (clientResponse.getStatus() != HttpStatus.OK_200 && clientResponse.getStatus() != HttpStatus.NO_CONTENT_204) {
         throw new ErrorDeletingDirectoryException(String.format("Failed DELETE %s: %d/%s", uri, clientResponse.getStatus(),
             clientResponse.getStatusInfo()));
+      }
+
+      ret.setSuccess(Boolean.parseBoolean(clientResponse.getHeaders().getFirst(Constants.SUCCESS_HEADER)));
+    } finally {
+      clientResponse.close();
+    }
+
+    return ret;
+  }
+
+  @Override
+  public DirectoryPermissionsResponse getPermissions(DirectoryPermissionsRequest request) {
+    DirectoryPermissionsResponse ret = new DirectoryPermissionsResponse();
+
+    if (remoteClient == null) {
+      throw new IllegalStateException(
+          String.format("%s missing %s", getClass().getSimpleName(), RemoteClient.class.getSimpleName()));
+    }
+
+    ret.setRequest(request);
+
+    String uri = remoteClient.getURI(Constants.PERMISSIONS_PATH);
+
+    WebResource webResource = remoteClient.getClient().resource(uri);
+    logger.debug(webResource.toString());
+    ClientResponse clientResponse = webResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+    try {
+      remoteClient.checkForException(clientResponse);
+
+      if (clientResponse.getStatus() != HttpStatus.OK_200 && clientResponse.getStatus() != HttpStatus.NO_CONTENT_204) {
+        throw new ErrorGettingPermissionsException(String.format("Failed GET %s: %d/%s", uri, clientResponse.getStatus(),
+            clientResponse.getStatusInfo()));
+      }
+
+      if (clientResponse.getHeaders().containsKey(Constants.ALLOW_DELETE_HEADER)) {
+        ret.setAllowDelete(Boolean.parseBoolean(clientResponse.getHeaders().getFirst(Constants.ALLOW_DELETE_HEADER)));
+      }
+
+      if (clientResponse.getHeaders().containsKey(Constants.ALLOW_WRITE_HEADER)) {
+        ret.setAllowWrite(Boolean.parseBoolean(clientResponse.getHeaders().getFirst(Constants.ALLOW_WRITE_HEADER)));
       }
 
       ret.setSuccess(Boolean.parseBoolean(clientResponse.getHeaders().getFirst(Constants.SUCCESS_HEADER)));

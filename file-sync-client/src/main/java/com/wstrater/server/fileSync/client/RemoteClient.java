@@ -67,10 +67,10 @@ public class RemoteClient {
   private String                userName;
   private transient String      userPassword;
 
-  private RemoteClient() {}
+  protected RemoteClient() {}
 
   public static Builder builder() {
-    return new Builder();
+    return new Builder(new RemoteClient());
   }
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -238,7 +238,11 @@ public class RemoteClient {
    */
   public static class Builder {
 
-    private RemoteClient built = new RemoteClient();
+    private RemoteClient built;
+
+    public Builder(RemoteClient built) {
+      this.built = built;
+    }
 
     public RemoteClient build() {
       logger.info(String.format("Remote Host: %s",
@@ -246,6 +250,10 @@ public class RemoteClient {
       return built;
     }
 
+    protected RemoteClient built() {
+      return built;
+    }
+    
     public Builder basicAuth(boolean basicAuth) {
       built.basicAuth = basicAuth;
       return this;

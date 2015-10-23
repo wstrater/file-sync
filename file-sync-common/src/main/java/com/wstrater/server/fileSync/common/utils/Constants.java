@@ -3,6 +3,8 @@ package com.wstrater.server.fileSync.common.utils;
 public abstract class Constants {
 
   public final static String ADMIN_ROLE              = "admin";
+  public final static String ALLOW_DELETE_HEADER     = "fileSync-allowDelete";
+  public final static String ALLOW_WRITE_HEADER      = "fileSync-allowWrite";
   public final static String BLOCK_SIZE_PARAM        = "blockSize";
   public final static String COMPRESSED_HEADER       = "fileSync-compressed";
   public final static String COMPRESSED_PARAM        = "compressed";
@@ -27,6 +29,7 @@ public abstract class Constants {
   public final static int    MINIMUM_FOR_COMPRESSION = 3072;
   public final static String OFFSET_PARAM            = "offset";
   public final static String PATH_PARAM              = "path";
+  public final static String PERMISSIONS_PATH        = "/perms";
   public final static String REALM                   = "file-sync-server";
   public final static String RECURSIVE_PARAM         = "recursive";
   public final static String REHASH_PARAM            = "rehash";

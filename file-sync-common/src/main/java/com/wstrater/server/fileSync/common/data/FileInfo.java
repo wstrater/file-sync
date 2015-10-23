@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.wstrater.server.fileSync.common.utils.AccessUtils.Access;
 
 /**
  * Details of a file within a directory.
@@ -14,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class FileInfo implements InfoItem {
 
+  private byte      access;
   private ChunkInfo chunkInfo;
   private String    hash;
   private String    hashType;
@@ -28,6 +30,10 @@ public class FileInfo implements InfoItem {
    */
   public void adjustLastModified(long offset) {
     lastModified += offset;
+  }
+
+  public byte getAccess() {
+    return access;
   }
 
   public ChunkInfo getChunkInfo() {
@@ -66,6 +72,10 @@ public class FileInfo implements InfoItem {
     return name;
   }
 
+  public void setAccess(byte access) {
+    this.access = access;
+  }
+
   public void setChunkInfo(ChunkInfo chunkInfo) {
     this.chunkInfo = chunkInfo;
   }
@@ -97,6 +107,7 @@ public class FileInfo implements InfoItem {
     builder.append("FileInfo [");
     if (name != null)
       builder.append("name=").append(name).append(", ");
+    builder.append("access=").append(Access.toString(access)).append(", ");
     if (hash != null)
       builder.append("hash=").append(hash).append(", ");
     if (hashType != null)

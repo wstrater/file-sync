@@ -33,7 +33,8 @@ public class SyncerRemoteClientTest extends SyncerTest {
 
   @Override
   protected Syncer newSyncer(FilePermissions permissions) {
-    RemoteClient.Builder remoteBuilder = RemoteClient.builder().host(cli.getHost()).port(cli.getPort());
+    RemoteClient.Builder remoteBuilder = RemoteUnitTestClient.builder().allowDelete(permissions.isRemoteDelete())
+        .allowWrite(permissions.isRemoteWrite()).host(cli.getHost()).port(cli.getPort());
     if (cli.getSsl() != null) {
       remoteBuilder.ssl(true);
       remoteBuilder.keyStoreFile(cli.getStoreFile());

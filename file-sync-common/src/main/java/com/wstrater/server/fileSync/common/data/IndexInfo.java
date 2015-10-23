@@ -3,6 +3,7 @@ package com.wstrater.server.fileSync.common.data;
 import java.util.Date;
 
 import com.wstrater.server.fileSync.common.utils.Compare;
+import com.wstrater.server.fileSync.common.utils.AccessUtils.Access;
 
 /**
  * Keeps track of the last know state of a file within a directory.
@@ -12,6 +13,7 @@ import com.wstrater.server.fileSync.common.utils.Compare;
  */
 public class IndexInfo implements Comparable<IndexInfo>, InfoItem {
 
+  private byte      access;
   private ChunkInfo chunkInfo;
   private String    hash;
   private String    hashType;
@@ -30,6 +32,10 @@ public class IndexInfo implements Comparable<IndexInfo>, InfoItem {
     }
 
     return ret;
+  }
+
+  public byte getAccess() {
+    return access;
   }
 
   public ChunkInfo getChunkInfo() {
@@ -66,6 +72,10 @@ public class IndexInfo implements Comparable<IndexInfo>, InfoItem {
     return name;
   }
 
+  public void setAccess(byte access) {
+    this.access = access;
+  }
+
   public void setChunkInfo(ChunkInfo chunkInfo) {
     this.chunkInfo = chunkInfo;
   }
@@ -97,6 +107,7 @@ public class IndexInfo implements Comparable<IndexInfo>, InfoItem {
     builder.append("IndexInfo [");
     if (name != null)
       builder.append("name=").append(name).append(", ");
+    builder.append("access=").append(Access.toString(access)).append(", ");
     if (lastModified != null)
       builder.append("lastModified=").append(lastModified).append(", ");
     if (length != null)

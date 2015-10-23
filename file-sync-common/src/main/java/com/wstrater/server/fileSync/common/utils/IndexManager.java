@@ -163,6 +163,7 @@ public class IndexManager {
           if (indexInfo == null) {
             indexInfo = new IndexInfo();
             indexInfo.setName(fileInfo.getName());
+            indexInfo.setAccess(fileInfo.getAccess());
             indexInfo.setLastModified(fileInfo.getLastModified());
             indexInfo.setLength(fileInfo.getLength());
             indexInfo.setChunkInfo(ChunkUtils.newInstance(fileInfo.getLength(), ChunkUtils.getBlockSize()));
@@ -184,7 +185,9 @@ public class IndexManager {
   public static void updateIndexInfo(IndexInfo indexInfo, FileInfo fileInfo) {
     if (indexInfo != null && fileInfo != null) {
       if (!Compare.equals(indexInfo.getLastModified(), fileInfo.getLastModified())
-          || !Compare.equals(indexInfo.getLength(), fileInfo.getLength())) {
+          || !Compare.equals(indexInfo.getLength(), fileInfo.getLength())
+          || !Compare.equals(indexInfo.getAccess(), fileInfo.getAccess())) {
+        indexInfo.setAccess(fileInfo.getAccess());
         indexInfo.setLastModified(fileInfo.getLastModified());
         indexInfo.setLength(fileInfo.getLength());
         indexInfo.setHashType(null);

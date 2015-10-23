@@ -11,7 +11,11 @@ import org.slf4j.LoggerFactory;
 import com.wstrater.server.fileSync.common.data.DirectoryInfo;
 import com.wstrater.server.fileSync.common.data.IndexFile;
 import com.wstrater.server.fileSync.common.data.IndexInfo;
+import com.wstrater.server.fileSync.common.data.InfoItem;
+import com.wstrater.server.fileSync.common.utils.AccessPermissions;
+import com.wstrater.server.fileSync.common.utils.AccessUtils;
 import com.wstrater.server.fileSync.common.utils.Compare;
+import com.wstrater.server.fileSync.common.utils.FileUtils;
 import com.wstrater.server.fileSync.common.utils.Constants.ActionEnum;
 import com.wstrater.server.fileSync.common.utils.Constants.ExistsEnum;
 import com.wstrater.server.fileSync.common.utils.Constants.NewerEnum;
@@ -52,7 +56,7 @@ public class PlanMapper {
           IndexFile.class.getSimpleName()));
     }
 
-    buildMap(sync, localDirectory, localIndex, remoteDirectory, remoteIndex, recursive, permissions);
+    buildMap(sync, localDirectory, localIndex, remoteDirectory, remoteIndex, recursive);
   }
 
   @Deprecated
@@ -76,7 +80,8 @@ public class PlanMapper {
       NewerEnum newer = PlanDecider.chooseNewer(localInfo, remoteInfo);
 
       logger.debug(String.format("Deciding local %s %b", localInfo.getName(), remoteInfo != null));
-      ActionEnum action = PlanDecider.decide(localInfo.getChunkInfo().getAction(), sync, exists, newer, permissions);
+      ActionEnum action = PlanDecider.decide(localInfo.getChunkInfo().getAction(), sync, exists, newer,
+          AccessPermissions.both(localInfo.getAccess(), remoteInfo.getAccess()));
       switch (action) {
         case CopyFileToLocal: {
           remoteFilesToSync.add(remoteInfo);
@@ -106,7 +111,8 @@ public class PlanMapper {
       IndexInfo remoteInfo = entry.getValue();
 
       logger.debug(String.format("Deciding remote %s", remoteInfo.getName()));
-      ActionEnum action = PlanDecider.decide(ActionEnum.Skip, sync, ExistsEnum.Remote, NewerEnum.Remote, permissions);
+      ActionEnum action = PlanDecider.decide(ActionEnum.Skip, sync, ExistsEnum.Remote, NewerEnum.Remote,
+          AccessPermissions.remoteOnly(remoteInfo.getAccess()));
       switch (action) {
         case CopyFileToLocal: {
           remoteFilesToSync.add(remoteInfo);
@@ -159,7 +165,7 @@ public class PlanMapper {
   }
 
   private void buildMap(SyncEnum sync, DirectoryInfo localDirectory, IndexFile localIndex, DirectoryInfo remoteDirectory,
-      IndexFile remoteIndex, boolean recursive, FilePermissions permissions) {
+      IndexFile remoteIndex, boolean recursive) {
     planItems.clear();
 
     // Map files that are local.
@@ -171,6 +177,7 @@ public class PlanMapper {
       NewerEnum newer = PlanDecider.chooseNewer(localInfo, remoteInfo);
 
       logger.debug(String.format("Deciding local file %s %b", localInfo.getName(), remoteInfo != null));
+      AccessPermissions permissions = getPermissions(localDirectory, localInfo, remoteDirectory, remoteInfo);
       ActionEnum action = PlanDecider.decide(localInfo.getChunkInfo().getAction(), sync, exists, newer, permissions);
       switch (action) {
         case CopyFileToLocal: {
@@ -205,6 +212,7 @@ public class PlanMapper {
       IndexInfo remoteInfo = entry.getValue();
 
       logger.debug(String.format("Deciding remote file %s", remoteInfo.getName()));
+      AccessPermissions permissions = getPermissions(localDirectory, null, remoteDirectory, remoteInfo);
       ActionEnum action = PlanDecider.decide(ActionEnum.Skip, sync, ExistsEnum.Remote, NewerEnum.Remote, permissions);
       switch (action) {
         case CopyFileToLocal: {
@@ -252,7 +260,8 @@ public class PlanMapper {
           } else {
             // It is local but not remote and we are syncing from remote to local so delete local.
             // localDirectiesToDelete.add(localInfo.getName());
-            if (permissions.isLocalDelete()) {
+            AccessPermissions permissions = getPermissions(localDirectory, localInfo, remoteDirectory, remoteInfo);
+            if (permissions.isLocalDeleteDirectory()) {
               planItems.add(new PlanItem(PlanTypeEnum.Directory, localInfo, null, ExistsEnum.Local, NewerEnum.Local,
                   ActionEnum.DeleteDirFromLocal));
             } else {
@@ -269,10 +278,11 @@ public class PlanMapper {
 
       // Map the directories that are only remote.
       for (DirectoryInfo remoteInfo : remoteDirectories) {
+        AccessPermissions permissions = getPermissions(localDirectory, null, remoteDirectory, remoteInfo);
         logger.debug(String.format("Deciding remote dir %s", remoteInfo.getName()));
         if (sync.syncRemoteToLocal()) {
           // remoteDirectiesToSync.add(remoteInfo.getName());
-          if (permissions.isLocalWrite()) {
+          if (permissions.isLocalWriteDirectory()) {
             planItems.add(new PlanItem(PlanTypeEnum.Directory, null, remoteInfo, ExistsEnum.Remote, NewerEnum.Remote,
                 ActionEnum.SyncRemoteDirToLocal));
           } else {
@@ -282,7 +292,7 @@ public class PlanMapper {
         } else {
           // It is remote but not local and we are syncing from local to remote so delete remote.
           // remoteDirectiesToDelete.add(remoteInfo.getName());
-          if (permissions.isRemoteDelete()) {
+          if (permissions.isRemoteDeleteDirectory()) {
             planItems.add(new PlanItem(PlanTypeEnum.Directory, null, remoteInfo, ExistsEnum.Remote, NewerEnum.Remote,
                 ActionEnum.DeleteDirFromRemote));
           } else {
@@ -294,6 +304,34 @@ public class PlanMapper {
     }
 
     Collections.sort(planItems, PlanItem.compareByAction());
+  }
+
+  private AccessPermissions getPermissions(DirectoryInfo localDirectory, InfoItem localInfo, DirectoryInfo remoteDirectory,
+      InfoItem remoteInfo) {
+    byte localAccess = 0;
+    byte remoteAccess = 0;
+
+    if (localInfo != null) {
+      localAccess = localInfo.getAccess();
+    } else if (localDirectory != null) {
+      localAccess = localDirectory.getAccess();
+    } else {
+      // Assume that we are syncing a new directory the parent directory permitted.
+      localAccess = AccessUtils.NewDirectory().permissions(FileUtils.getPermissions()).get();
+      throw new IllegalStateException("Local directory info should exist");
+    }
+
+    if (remoteInfo != null) {
+      remoteAccess = remoteInfo.getAccess();
+    } else if (remoteDirectory != null) {
+      remoteAccess = remoteDirectory.getAccess();
+    } else {
+      // Assume that we are syncing a new directory the parent directory permitted.
+      remoteAccess = AccessUtils.NewDirectory().get();
+      throw new IllegalStateException("Remote directory info should exist");
+    }
+
+    return AccessPermissions.both(localAccess, remoteAccess);
   }
 
   public List<PlanItem> getPlanItems() {

@@ -23,6 +23,8 @@ import com.floreysoft.jmte.Renderer;
 import com.wstrater.server.fileSync.common.data.DirectoryInfo;
 import com.wstrater.server.fileSync.common.data.DirectoryListRequest;
 import com.wstrater.server.fileSync.common.data.DirectoryListResponse;
+import com.wstrater.server.fileSync.common.data.DirectoryPermissionsRequest;
+import com.wstrater.server.fileSync.common.data.DirectoryPermissionsResponse;
 import com.wstrater.server.fileSync.common.data.IndexFile;
 import com.wstrater.server.fileSync.common.exceptions.ErrorListingDirectoryException;
 import com.wstrater.server.fileSync.common.exceptions.ErrorLoadingPlanTemplateException;
@@ -36,6 +38,7 @@ import com.wstrater.server.fileSync.common.file.DirectoryListerLocalAsRemoteImpl
 import com.wstrater.server.fileSync.common.file.DirectoryListerLocalImpl;
 import com.wstrater.server.fileSync.common.utils.Compare;
 import com.wstrater.server.fileSync.common.utils.Constants.SyncEnum;
+import com.wstrater.server.fileSync.common.utils.AccessUtils;
 import com.wstrater.server.fileSync.common.utils.DirectoryUtils;
 import com.wstrater.server.fileSync.common.utils.FilePermissions;
 import com.wstrater.server.fileSync.common.utils.FileUtils;
@@ -93,6 +96,8 @@ public class Planner {
     } catch (NotValidDirectoryException ee) {
       // It does not exist so create an empty structure.
       ret = new DirectoryInfo();
+      DirectoryPermissionsResponse response = lister.getPermissions(new DirectoryPermissionsRequest());
+      ret.setAccess(AccessUtils.NewDirectory().permissions(response.isAllowDelete(), response.isAllowWrite()).get());
     }
 
     return ret;
@@ -108,10 +113,15 @@ public class Planner {
 
     if (remoteBaseDir != null && remoteClient == null) {
       // This is a special implementation for swapping local and remote permissions while unit
-      // tesing.
+      // testing.
       remoteLister = new DirectoryListerLocalAsRemoteImpl();
     } else {
-      remoteLister = new DirectoryListerRemoteImpl(remoteClient);
+      if (remoteClient instanceof RemoteUnitTestClient) {
+        // This is used for integration testing to override permissions.
+        remoteLister = new DirectoryListerRemoteUnitTestImpl((RemoteUnitTestClient)remoteClient);
+      } else {
+        remoteLister = new DirectoryListerRemoteImpl(remoteClient);
+      }
     }
   }
 
